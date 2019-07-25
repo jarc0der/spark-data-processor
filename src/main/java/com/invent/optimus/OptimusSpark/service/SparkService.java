@@ -29,46 +29,53 @@ public class SparkService {
 
     public void process() throws IOException {
 
-        List<String> lookupFiles = retrieveLookup();
+        List<String> lookupFiles = retrieveLookupFiles();
 
-        lookupFiles.forEach(lookUp -> {
-            String columnName = lookUp.replace(".tsv", "");
-            Dataset lookupPart = sparkSession.read()
-                    .option("delimiter", "\t")
-                    .schema(buildSchema(columnName))
-                    .csv(LOOKUP_FILES_PATH + lookUp);
-            lookupPart.createOrReplaceTempView(columnName);
-        });
-
-        StructType schema = new StructType();
+        constructDataFrames(lookupFiles);
 
         List<String> headers = retrieveHeaders();
-
-        for( String h : headers) {
-            schema = schema.add(h, DataTypes.StringType, true);
-        }
 
         Dataset hitData = sparkSession.read()
                 .option("delimiter", "\t")
                 .option("header", false)
                 .option("nullValue", "none")
-                .schema(schema)
-                .csv("adobe/hit_data_BIG.tsv");
-
+                .schema(constructSchema(headers))
+                .csv("adobe/hit_data.tsv");
         hitData.createOrReplaceTempView("hitData");
 
-        sparkSession.sql("select " +         "sc.*, " +         "browser.browser as browser_name, " +         "browser_type, " +         "connection_type.connection_type as connection_name, " +         "country.country as country_name, " +         "javascript_version, " +         "languages.languages as languages, " +         "operating_systems, " +         "referrer_type, " +         "resolution.resolution as screen_resolution, " +         "search_engines " +         "from hitData as sc " +         "left join browser on sc.browser = browser.id " +         "left join browser_type on sc.browser = browser_type.id " +         "left join connection_type on sc.connection_type = connection_type.id " +         "left join country on sc.country = country.id " +         "left join javascript_version on sc.javascript = javascript_version.id " +         "left join languages on sc.language = languages.id " +         "left join operating_systems on sc.os = operating_systems.id " +         "left join referrer_type on sc.ref_type = referrer_type.id " +         "left join resolution on sc.resolution = resolution.id " +         "left join search_engines on sc.post_search_engine = search_engines.id ")
+        sparkSession.sql("select sc.*, " +         "browser.browser as browser_name, " +         "browser_type, " +         "connection_type.connection_type as connection_name, " +         "country.country as country_name, " +         "javascript_version, " +         "languages.languages as languages, " +         "operating_systems, " +         "referrer_type, " +         "resolution.resolution as screen_resolution, " +         "search_engines " +         "from hitData as sc " +         "left join browser on sc.browser = browser.id " +         "left join browser_type on sc.browser = browser_type.id " +         "left join connection_type on sc.connection_type = connection_type.id " +         "left join country on sc.country = country.id " +         "left join javascript_version on sc.javascript = javascript_version.id " +         "left join languages on sc.language = languages.id " +         "left join operating_systems on sc.os = operating_systems.id " +         "left join referrer_type on sc.ref_type = referrer_type.id " +         "left join resolution on sc.resolution = resolution.id " +         "left join search_engines on sc.post_search_engine = search_engines.id ")
                 .write().mode("overwrite").json("final.json");
     }
 
-    private StructType buildSchema(String columnName) {
+    private StructType constructSchema(final List<String> hitDataHeaders) {
+        StructType schema = new StructType();
+
+        for(String singleColumn : hitDataHeaders) {
+            schema = schema.add(singleColumn, DataTypes.StringType, true);
+        }
+
+        return schema;
+    }
+
+    private void constructDataFrames(final List<String> lookUpFiles) {
+        lookUpFiles.forEach(lookUp -> {
+            String columnName = lookUp.replace(".tsv", "");
+            Dataset lookupPart = sparkSession.read()
+                    .option("delimiter", "\t")
+                    .schema(constructLookupSchema(columnName))
+                    .csv(LOOKUP_FILES_PATH + lookUp);
+            lookupPart.createOrReplaceTempView(columnName);
+        });
+    }
+
+    private StructType constructLookupSchema(String columnName) {
         return new StructType()
                 .add("id", DataTypes.StringType, true)
                 .add(columnName, DataTypes.StringType, true);
 
     }
 
-    private List<String> retrieveLookup() {
+    private List<String> retrieveLookupFiles() {
         return Arrays
                 .stream(Objects.requireNonNull(new File("adobe/lookup_data")
                         .listFiles()))
