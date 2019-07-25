@@ -1,0 +1,20 @@
+file                |   column
+browser.tsv         |   browser
+browser_type        |   browser*
+color_depth         |   -
+connection_type     |   connection_type
+country             |   country
+event               |   -
+javascript_version  |   javascript*
+languages           |   language*
+operation_systems   |   os*
+plugins             |   -
+referrer_type       |   ref_type*
+resolution          |   resolution
+search_engines      |   post_search_engine*
+
+
+sparkSession.sql("SELECT hitData.*, part.browser_name from hitData left join part on hitData.browser = part.browser").show();
+sparkSession.sql("SELECT hitData.*, browser.browser as browser_name from hitData" +
+        " left join browser on hitData.browser = browser.id").show();
+
