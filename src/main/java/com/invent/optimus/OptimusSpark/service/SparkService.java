@@ -43,7 +43,8 @@ public class SparkService {
                 .csv("adobe/hit_data.tsv");
         hitData.createOrReplaceTempView("hitData");
 
-        sparkSession.sql("select sc.*, " +         "browser.browser as browser_name, " +         "browser_type, " +         "connection_type.connection_type as connection_name, " +         "country.country as country_name, " +         "javascript_version, " +         "languages.languages as languages, " +         "operating_systems, " +         "referrer_type, " +         "resolution.resolution as screen_resolution, " +         "search_engines " +         "from hitData as sc " +         "left join browser on sc.browser = browser.id " +         "left join browser_type on sc.browser = browser_type.id " +         "left join connection_type on sc.connection_type = connection_type.id " +         "left join country on sc.country = country.id " +         "left join javascript_version on sc.javascript = javascript_version.id " +         "left join languages on sc.language = languages.id " +         "left join operating_systems on sc.os = operating_systems.id " +         "left join referrer_type on sc.ref_type = referrer_type.id " +         "left join resolution on sc.resolution = resolution.id " +         "left join search_engines on sc.post_search_engine = search_engines.id ")
+        //compute and save result
+        sparkSession.sql("select sc.*, " + "browser.browser as browser_name, " + "browser_type, " + "connection_type.connection_type as connection_name, " +         "country.country as country_name, " +         "javascript_version, " +         "languages.languages as languages, " +         "operating_systems, " +         "referrer_type, " +         "resolution.resolution as screen_resolution, " +         "search_engines " +         "from hitData as sc " +         "left join browser on sc.browser = browser.id " +         "left join browser_type on sc.browser = browser_type.id " +         "left join connection_type on sc.connection_type = connection_type.id " +         "left join country on sc.country = country.id " +         "left join javascript_version on sc.javascript = javascript_version.id " +         "left join languages on sc.language = languages.id " +         "left join operating_systems on sc.os = operating_systems.id " +         "left join referrer_type on sc.ref_type = referrer_type.id " +         "left join resolution on sc.resolution = resolution.id " +         "left join search_engines on sc.post_search_engine = search_engines.id ")
                 .write().mode("overwrite").json("final.json");
     }
 
@@ -72,7 +73,6 @@ public class SparkService {
         return new StructType()
                 .add("id", DataTypes.StringType, true)
                 .add(columnName, DataTypes.StringType, true);
-
     }
 
     private List<String> retrieveLookupFiles() {
@@ -91,7 +91,6 @@ public class SparkService {
                         .get("adobe/lookup_data/column_headers.tsv"))
                 .get(0)
                 .split("\\t")));
-
     }
 
 }
